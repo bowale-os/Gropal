@@ -6,11 +6,11 @@ import type { Goal } from "@/types";
 import ProgressBar from "./ProgressBar";
 import XPBadge from "./XPBadge";
 
-const STATUS_STYLES: Record<string, { label: string; color: string; bg: string }> = {
-  on_track: { label: "On Track ✓", color: "#22C55E", bg: "rgba(34,197,94,0.12)" },
-  behind: { label: "Behind ⚠️", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
-  completed: { label: "Completed 🎉", color: "#60A5FA", bg: "rgba(37,99,235,0.12)" },
-  paused: { label: "Paused", color: "#7B9CC4", bg: "rgba(123,156,196,0.1)" },
+const STATUS_STYLES: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  on_track: { label: "ON TRACK",  color: "#22FF88", bg: "rgba(34,255,136,0.08)",  border: "rgba(34,255,136,0.2)" },
+  behind:   { label: "BEHIND",    color: "#FFB800", bg: "rgba(255,184,0,0.08)",   border: "rgba(255,184,0,0.2)" },
+  completed:{ label: "COMPLETE",  color: "#FF6B2B", bg: "rgba(255,107,43,0.08)",  border: "rgba(255,107,43,0.2)" },
+  paused:   { label: "PAUSED",    color: "#6B6560", bg: "rgba(107,101,96,0.08)",  border: "rgba(107,101,96,0.2)" },
 };
 
 interface Props {
@@ -22,47 +22,50 @@ export default function GoalCard({ goal, onContribute }: Props) {
   const [expanded, setExpanded] = useState(false);
   const status = STATUS_STYLES[goal.status] ?? STATUS_STYLES.on_track;
   const progress = goal.progress_pct ?? Math.round((goal.current_amount / Math.max(goal.target_amount, 1)) * 100);
-  const progressColor = goal.status === "behind" ? "#F59E0B" : "#2563EB";
+  const progressColor = goal.status === "behind" ? "#FFB800" : goal.status === "completed" ? "#22FF88" : "#FF6B2B";
 
   return (
     <motion.div
       layout
-      className="rounded-2xl overflow-hidden mb-3 cursor-pointer"
-      style={{ background: "#0C1829", border: "1px solid #1A2F50" }}
+      className="overflow-hidden mb-3 cursor-pointer"
+      style={{ background: "#0E0E0E", border: "1px solid #242424", borderRadius: "4px" }}
       onClick={() => setExpanded(!expanded)}
     >
-      <div className="p-5">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-semibold" style={{ color: "#EEF4FF" }}>{goal.name}</h3>
-          <span
-            className="text-xs font-semibold px-2.5 py-1 rounded-full"
-            style={{ color: status.color, background: status.bg }}
-          >
-            {status.label}
-          </span>
-        </div>
+      {/* Left accent bar */}
+      <div className="relative">
+        <div
+          className="absolute left-0 top-0 bottom-0 w-[2px]"
+          style={{ background: progressColor }}
+        />
+        <div className="p-4 pl-5">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-display font-semibold text-ink text-sm leading-tight">{goal.name}</h3>
+            <span
+              className="font-mono text-[9px] font-semibold px-2 py-0.5 rounded-[2px] tracking-[0.1em] shrink-0 ml-2"
+              style={{ color: status.color, background: status.bg, border: `1px solid ${status.border}` }}
+            >
+              {status.label}
+            </span>
+          </div>
 
-        <ProgressBar value={progress} max={100} color={progressColor} height="6px" />
+          <ProgressBar value={progress} max={100} color={progressColor} height="4px" />
 
-        <div className="flex justify-between mt-2 text-xs" style={{ color: "#7B9CC4" }}>
-          <span>${goal.current_amount.toLocaleString()} of ${goal.target_amount.toLocaleString()}</span>
-          <span>{progress}%</span>
-        </div>
+          <div className="flex justify-between mt-2 font-mono text-[11px]" style={{ color: "#6B6560" }}>
+            <span>${goal.current_amount.toLocaleString()}</span>
+            <span>${goal.target_amount.toLocaleString()}</span>
+          </div>
 
-        {goal.status === "behind" && (goal.days_behind ?? 0) > 0 && (
-          <p className="text-xs mt-2" style={{ color: "#F59E0B" }}>
-            {goal.days_behind} days behind schedule
-          </p>
-        )}
+          {goal.status === "behind" && (goal.days_behind ?? 0) > 0 && (
+            <p className="text-[11px] font-mono mt-2" style={{ color: "#FFB800" }}>
+              ▼ {goal.days_behind}d behind schedule
+            </p>
+          )}
 
-        {goal.projected_completion && (
-          <p className="text-xs mt-1" style={{ color: "#7B9CC4" }}>
-            Projected: {goal.projected_completion}
-          </p>
-        )}
-
-        <div className="flex justify-end mt-1">
-          <span className="text-xs" style={{ color: "#7B9CC4" }}>{expanded ? "▲ Less" : "▼ More"}</span>
+          <div className="flex justify-end mt-1.5">
+            <span className="font-mono text-[9px] tracking-widest" style={{ color: "#3A3530" }}>
+              {expanded ? "COLLAPSE ▲" : "EXPAND ▼"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -72,47 +75,49 @@ export default function GoalCard({ goal, onContribute }: Props) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            style={{ borderTop: "1px solid #1A2F50" }}
+            transition={{ duration: 0.22 }}
+            style={{ borderTop: "1px solid #242424" }}
           >
-            <div className="p-5 pt-4">
+            <div className="p-4 pl-5">
               {goal.suggested_next_move && (
                 <div
-                  className="rounded-xl p-4 mb-4 flex items-start justify-between gap-3"
-                  style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)" }}
+                  className="p-3 mb-4 rounded-[3px]"
+                  style={{ background: "rgba(255,107,43,0.06)", border: "1px solid rgba(255,107,43,0.15)" }}
                 >
-                  <div>
-                    <p className="text-sm font-medium mb-1" style={{ color: "#EEF4FF" }}>Suggested Move</p>
-                    <p className="text-xs" style={{ color: "#7B9CC4" }}>{goal.suggested_next_move.text}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
+                  <div className="flex justify-between items-start gap-2 mb-1">
+                    <p className="font-mono text-[9px] tracking-[0.12em] text-primary">SUGGESTED MOVE</p>
                     <XPBadge xp={goal.suggested_next_move.xp_reward} />
-                    {onContribute && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onContribute(goal); }}
-                        className="text-xs font-semibold px-3 py-1.5 rounded-xl transition-all hover:opacity-90"
-                        style={{ background: "#2563EB", color: "#fff" }}
-                      >
-                        Do this
-                      </button>
-                    )}
                   </div>
+                  <p className="text-xs text-ink-muted leading-relaxed mb-3">
+                    {goal.suggested_next_move.text}
+                  </p>
+                  {onContribute && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onContribute(goal); }}
+                      className="btn-primary text-xs font-display font-bold px-4 py-2 w-full"
+                    >
+                      Execute →
+                    </button>
+                  )}
                 </div>
               )}
 
               {goal.route && goal.route.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "#7B9CC4" }}>Route</p>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  <p className="font-mono text-[9px] tracking-[0.12em] mb-2" style={{ color: "#3A3530" }}>ROUTE MAP</p>
+                  <div className="space-y-2 max-h-44 overflow-y-auto">
                     {goal.route.slice(0, 6).map((step) => (
                       <div key={step.month} className="flex items-center gap-3 text-xs">
                         <span
-                          className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[10px]"
-                          style={{ background: "#1A2F50", color: "#60A5FA" }}
+                          className="shrink-0 w-6 h-6 flex items-center justify-center font-mono font-semibold text-[9px]"
+                          style={{ background: "#161616", border: "1px solid #242424", borderRadius: "2px", color: "#FF6B2B" }}
                         >
-                          M{step.month}
+                          {step.month}
                         </span>
-                        <span className="flex-1" style={{ color: "#7B9CC4" }}>{step.action}</span>
+                        <span className="flex-1 text-ink-muted">{step.action}</span>
+                        <span className="font-mono text-[10px]" style={{ color: "#6B6560" }}>
+                          ${step.balance_after.toLocaleString()}
+                        </span>
                       </div>
                     ))}
                   </div>

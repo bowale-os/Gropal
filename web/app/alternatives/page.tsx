@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { api } from "@/services/api";
 import type { Alternative } from "@/types";
 import Navigation from "@/components/Navigation";
@@ -25,14 +26,10 @@ function AlternativesContent() {
   const load = useCallback(async () => {
     try {
       const res = await api.getAlternatives({ user_id: userId, merchant, amount, category }) as {
-        alternatives: Alternative[];
-        original_impact_months: number;
+        alternatives: Alternative[]; original_impact_months: number;
       };
-      setAlternatives(res.alternatives);
-      setOriginalImpact(res.original_impact_months);
-    } catch {} finally {
-      setLoading(false);
-    }
+      setAlternatives(res.alternatives); setOriginalImpact(res.original_impact_months);
+    } catch {} finally { setLoading(false); }
   }, [userId, merchant, amount, category]);
 
   useEffect(() => { load(); }, [load]);
@@ -41,104 +38,103 @@ function AlternativesContent() {
     setSelecting(alt.id);
     try {
       await api.selectAlternative({
-        user_id: userId,
-        alternative_id: alt.id,
-        alternative_label: alt.label,
-        original_amount: amount,
-        category,
-        monthly_cost: alt.monthly_cost,
+        user_id: userId, alternative_id: alt.id, alternative_label: alt.label,
+        original_amount: amount, category, monthly_cost: alt.monthly_cost,
         goal_impact_months: alt.goal_impact_months,
       });
       router.push("/gps");
-    } catch {
-      setSelecting(null);
-    }
+    } catch { setSelecting(null); }
   };
 
   return (
-    <main className="min-h-screen pb-24 px-4 pt-6" style={{ background: "#060D1A" }}>
-      <button onClick={() => router.back()} className="text-sm text-[#7B9CC4] mb-4 flex items-center gap-1">
-        ← Back
+    <main className="min-h-screen bg-bg pb-24 px-4 pt-6">
+
+      {/* Back + header */}
+      <button onClick={() => router.back()}
+        className="font-mono text-[10px] tracking-widest mb-5 flex items-center gap-1.5 transition-colors hover:text-primary"
+        style={{ color: "#6B6560" }}>
+        ← BACK
       </button>
-      <h1 className="text-2xl font-bold text-[#EEF4FF] mb-1">Smarter Options</h1>
-      <div
-        className="rounded-xl px-4 py-3 mb-6 text-sm"
-        style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#EF4444" }}
-      >
-        <span className="font-semibold">{merchant} ${amount.toLocaleString()}</span> — pushes your top goal back{" "}
-        <span className="font-bold">{originalImpact} months</span>
+
+      <div className="mb-5">
+        <p className="font-mono text-[9px] tracking-[0.18em] mb-1" style={{ color: "#3A3530" }}>DECISION ENGINE</p>
+        <h1 className="font-display font-bold text-2xl text-ink">Smarter Options</h1>
+      </div>
+
+      {/* Impact warning */}
+      <div className="p-3 mb-5 rounded-[3px]"
+        style={{ background: "rgba(255,59,59,0.06)", border: "1px solid rgba(255,59,59,0.2)", borderLeft: "2px solid #FF3B3B" }}>
+        <p className="font-mono text-[11px]" style={{ color: "#FF3B3B" }}>
+          <span className="font-bold">{merchant} ${amount.toLocaleString()}</span> — pushes your top goal back{" "}
+          <span className="font-bold">{originalImpact} months</span>
+        </p>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-            className="text-3xl mb-4"
-          >
-            ⚙️
-          </motion.div>
-          <p className="text-sm text-[#7B9CC4]">Finding smarter paths...</p>
+          <div className="fox-float mb-4">
+            <Image src="/fox-chart.png" alt="Fort" width={80} height={80} className="object-contain" />
+          </div>
+          <p className="font-mono text-[11px] tracking-widest" style={{ color: "#6B6560" }}>
+            FINDING SMARTER PATHS…
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {alternatives.map((alt, i) => (
-            <motion.div
-              key={alt.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="rounded-2xl p-5"
-              style={{
-                background: alt.id === "D" ? "rgba(239,68,68,0.04)" : "#0C1829",
-                border: `1px solid ${alt.id === "D" ? "rgba(239,68,68,0.15)" : "#1A2F50"}`,
-              }}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-2xl">{alt.emoji}</span>
-                <div>
-                  <p className="font-semibold text-[#EEF4FF]">{alt.label}</p>
-                  <span
-                    className="text-xs font-bold"
-                    style={{ color: alt.goal_impact_months < originalImpact ? "#22C55E" : "#EF4444" }}
-                  >
-                    {alt.goal_impact_months < originalImpact
-                      ? `↓ ${alt.goal_impact_months} months delay (vs ${originalImpact})`
-                      : `${alt.goal_impact_months} months delay`}
-                  </span>
-                </div>
-              </div>
-              <p className="text-sm text-[#7B9CC4] mb-4">{alt.description}</p>
-              {alt.monthly_cost && (
-                <p className="text-xs text-[#7B9CC4] mb-3">
-                  ~${alt.monthly_cost}/month commitment
-                </p>
-              )}
-              <button
-                onClick={() => select(alt)}
-                disabled={selecting !== null}
-                className="w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
-                style={
-                  alt.id === "D"
-                    ? { background: "#1A2F50", color: "#7B9CC4" }
-                    : { background: "#2563EB", color: "#fff" }
-                }
+          {alternatives.map((alt, i) => {
+            const isBetter = alt.goal_impact_months < originalImpact;
+            const isWorst = alt.id === "D";
+            return (
+              <motion.div
+                key={alt.id}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.09 }}
+                className="overflow-hidden rounded-[4px]"
+                style={{
+                  background: isWorst ? "rgba(255,59,59,0.04)" : "#0E0E0E",
+                  border: `1px solid ${isWorst ? "rgba(255,59,59,0.15)" : "#242424"}`,
+                  borderLeft: `2px solid ${isWorst ? "#FF3B3B" : isBetter ? "#22FF88" : "#FF6B2B"}`,
+                }}
               >
-                {selecting === alt.id ? "Applying..." : alt.id === "D" ? "Proceed Anyway" : "Choose This Path"}
-              </button>
-            </motion.div>
-          ))}
+                <div className="p-4">
+                  <div className="flex items-start gap-3 mb-2">
+                    <span className="text-xl shrink-0">{alt.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display font-semibold text-sm text-ink">{alt.label}</p>
+                      <p className="font-mono text-[10px] mt-0.5" style={{ color: isBetter ? "#22FF88" : "#FF3B3B" }}>
+                        {isBetter
+                          ? `↓ ${alt.goal_impact_months}mo delay (saves ${originalImpact - alt.goal_impact_months}mo)`
+                          : `${alt.goal_impact_months}mo delay`}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs leading-relaxed mb-3" style={{ color: "#6B6560" }}>{alt.description}</p>
+                  {alt.monthly_cost && (
+                    <p className="font-mono text-[10px] mb-3" style={{ color: "#6B6560" }}>
+                      ~${alt.monthly_cost}/mo commitment
+                    </p>
+                  )}
+                  <button
+                    onClick={() => select(alt)}
+                    disabled={selecting !== null}
+                    className={`w-full py-3 font-display font-bold text-sm rounded-[3px] transition-all disabled:opacity-50 ${isWorst ? "" : "btn-primary"}`}
+                    style={isWorst ? { background: "transparent", border: "1px solid #242424", color: "#6B6560" } : {}}
+                  >
+                    {selecting === alt.id ? "Applying…" : isWorst ? "Proceed Anyway" : "Choose This Path →"}
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
+
       <Navigation />
     </main>
   );
 }
 
 export default function AlternativesPage() {
-  return (
-    <Suspense>
-      <AlternativesContent />
-    </Suspense>
-  );
+  return <Suspense><AlternativesContent /></Suspense>;
 }

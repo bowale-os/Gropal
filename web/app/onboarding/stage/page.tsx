@@ -9,9 +9,9 @@ import ProgressBar from "@/components/ProgressBar";
 import RiskBadge from "@/components/RiskBadge";
 
 const STARTER_HABITS = [
-  { name: "No-Spend Check-In", desc: "Flag one thing you could skip today.", duration: "10 sec", xp: 10 },
-  { name: "Bill Forecast", desc: "Check what bills are due this week.", duration: "30 sec", xp: 10 },
-  { name: "One Thing I Learned", desc: "Name one financial move you made today.", duration: "45 sec", xp: 10 },
+  { name: "No-Spend Check-In", desc: "Flag one thing you could skip today.", duration: "10s", xp: 10 },
+  { name: "Bill Forecast", desc: "Check what bills are due this week.", duration: "30s", xp: 10 },
+  { name: "One Win Today", desc: "Name one financial move you made.", duration: "45s", xp: 10 },
 ];
 
 function StageRevealContent() {
@@ -27,121 +27,104 @@ function StageRevealContent() {
   const stageInfo = STAGES[stage] ?? STAGES["Credit Builder"];
   const xpNeeded = STAGE_XP[stage] ?? 500;
 
-  useEffect(() => {
-    setTimeout(() => setVisible(true), 100);
-  }, []);
+  useEffect(() => { setTimeout(() => setVisible(true), 100); }, []);
 
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.3 } },
-  };
-  const item = {
-    hidden: { opacity: 0, y: 24 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  };
+  const container = { hidden: {}, show: { transition: { staggerChildren: 0.25 } } };
+  const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.45 } } };
 
   return (
-    <main
-      className="min-h-screen px-5 py-10 pb-32 overflow-y-auto"
-      style={{ background: "linear-gradient(180deg, #060D1A 0%, #0A1628 100%)" }}
-    >
+    <main className="min-h-screen bg-bg px-5 pt-8 pb-32 overflow-y-auto">
       {visible && (
         <motion.div variants={container} initial="hidden" animate="show" className="max-w-lg mx-auto">
-          {/* Fort the Fox + stage emoji */}
+
+          {/* Stage unlock */}
           <motion.div variants={item} className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="fox-float">
-                <Image src="/mascot.png" alt="Fort the Fox" width={72} height={72} />
+            <p className="font-mono text-[9px] tracking-[0.2em] mb-4" style={{ color: "#3A3530" }}>
+              STAGE UNLOCKED
+            </p>
+            <div className="relative inline-block mb-4">
+              <div
+                className="absolute inset-0 rounded-full blur-2xl opacity-40"
+                style={{ background: stageInfo.color }}
+              />
+              <div className="relative fox-float">
+                <Image src="/fox-main.png" alt="Fort" width={100} height={100} className="object-contain" />
               </div>
             </div>
             <motion.div
-              className="text-7xl mb-4 inline-block"
-              animate={{ scale: [1, 1.08, 1], rotate: [0, 3, -3, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              style={{ filter: `drop-shadow(0 0 20px ${stageInfo.color}66)` }}
+              className="text-6xl mb-3 inline-block"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+              style={{ filter: `drop-shadow(0 0 16px ${stageInfo.color}80)` }}
             >
               {stageInfo.emoji}
             </motion.div>
-            <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: stageInfo.color }}>
-              Your Stage
+            <h1 className="font-display font-bold text-3xl text-ink mb-2">{stageInfo.name}</h1>
+            <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: "#6B6560" }}>
+              {stageInfo.description}
             </p>
-            <h1 className="text-3xl font-bold mb-3" style={{ color: "#EEF4FF" }}>{stageInfo.name}</h1>
-            <p className="text-sm max-w-xs mx-auto" style={{ color: "#7B9CC4" }}>{stageInfo.description}</p>
           </motion.div>
 
-          <motion.div variants={item} className="mb-6">
+          <motion.div variants={item} className="flex justify-center mb-6">
             <RiskBadge level={riskLevel} label={`Top risk: ${topRisk}`} />
           </motion.div>
 
-          {/* XP progress */}
-          <motion.div
-            variants={item}
-            className="rounded-2xl p-5 mb-6"
-            style={{ background: "#0C1829", border: "1px solid #1A2F50" }}
-          >
-            <div className="flex justify-between text-sm mb-3">
-              <span style={{ color: "#7B9CC4" }}>XP Progress</span>
-              <span className="font-semibold" style={{ color: "#EEF4FF" }}>0 / {xpNeeded} to next stage</span>
+          {/* XP bar */}
+          <motion.div variants={item} className="card p-4 mb-5">
+            <div className="flex justify-between font-mono text-[10px] mb-3" style={{ color: "#6B6560" }}>
+              <span>XP PROGRESS</span>
+              <span>0 / {xpNeeded} TO NEXT STAGE</span>
             </div>
-            <ProgressBar value={0} max={xpNeeded} color="#2563EB" height="10px" />
-            <p className="text-xs mt-2" style={{ color: "#7B9CC4" }}>
+            <ProgressBar value={0} max={xpNeeded} color="#FF6B2B" height="6px" />
+            <p className="font-mono text-[10px] mt-2" style={{ color: "#3A3530" }}>
               Every habit, tap check, and goal move earns XP.
             </p>
           </motion.div>
 
           {/* Starter habits */}
           <motion.div variants={item} className="mb-8">
-            <p className="text-sm font-semibold mb-3 uppercase tracking-wide" style={{ color: "#7B9CC4" }}>
-              Your First 3 Builds
+            <p className="font-mono text-[9px] tracking-[0.14em] mb-3" style={{ color: "#3A3530" }}>
+              YOUR FIRST 3 BUILDS
             </p>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {STARTER_HABITS.map((h, i) => (
                 <motion.div
                   key={h.name}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.2 + i * 0.2 }}
-                  className="rounded-xl p-4 flex items-center gap-4"
-                  style={{ background: "#0C1829", border: "1px solid #1A2F50" }}
+                  transition={{ delay: 1.0 + i * 0.15 }}
+                  className="card p-3 flex items-center gap-3"
+                  style={{ borderLeft: "2px solid #FF6B2B" }}
                 >
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                    style={{ background: "rgba(37,99,235,0.12)" }}
+                    className="w-9 h-9 rounded-[3px] flex items-center justify-center text-base shrink-0"
+                    style={{ background: "rgba(255,107,43,0.08)", border: "1px solid rgba(255,107,43,0.15)" }}
                   >
-                    {["✅", "📋", "💡"][i]}
+                    {["✓", "◎", "◈"][i]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold" style={{ color: "#EEF4FF" }}>{h.name}</p>
-                    <p className="text-xs truncate" style={{ color: "#7B9CC4" }}>{h.desc}</p>
+                    <p className="font-display font-semibold text-sm text-ink">{h.name}</p>
+                    <p className="text-xs truncate" style={{ color: "#6B6560" }}>{h.desc}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span
-                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: "#1A2F50", color: "#7B9CC4" }}
-                    >
-                      {h.duration}
-                    </span>
-                    <span className="text-xs font-bold" style={{ color: "#2563EB" }}>+{h.xp} XP</span>
+                    <span className="font-mono text-[9px]" style={{ color: "#6B6560" }}>{h.duration}</span>
+                    <span className="font-mono text-[10px] font-semibold" style={{ color: "#FFD60A" }}>+{h.xp} XP</span>
                   </div>
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
-          {/* CTA */}
           <motion.button
             variants={item}
-            whileTap={{ scale: 0.97 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
-              if (userId) {
-                localStorage.setItem("fortifi_user_id", userId);
-              }
+              if (userId) localStorage.setItem("fortifi_user_id", userId);
               router.push("/dashboard");
             }}
-            className="w-full py-4 rounded-2xl font-bold text-lg transition-all glow-primary"
-            style={{ background: "#2563EB", color: "#fff" }}
+            className="btn-primary w-full py-4 font-display font-bold text-base tracking-wide glow-primary"
           >
-            Your fortress is set. Let&apos;s move. 🚀
+            Fortress set. Let&apos;s move →
           </motion.button>
         </motion.div>
       )}
@@ -150,9 +133,5 @@ function StageRevealContent() {
 }
 
 export default function StageRevealPage() {
-  return (
-    <Suspense>
-      <StageRevealContent />
-    </Suspense>
-  );
+  return <Suspense><StageRevealContent /></Suspense>;
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useGropalStore } from "@/store";
 import { api } from "@/services/api";
 import Navigation from "@/components/Navigation";
@@ -28,9 +29,7 @@ export default function GPSPage() {
       const res = await api.getGoals(userId) as { goals: Goal[] };
       setGoals(res.goals);
       setLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-    } catch {} finally {
-      setLoading(false);
-    }
+    } catch {} finally { setLoading(false); }
   }, [userId, setGoals]);
 
   useEffect(() => { load(); }, [load]);
@@ -42,25 +41,34 @@ export default function GPSPage() {
       setGoals(res.goals);
       setSummary(res.rebalance_summary ?? null);
       setLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-    } catch {} finally {
-      setRecalculating(false);
-    }
+    } catch {} finally { setRecalculating(false); }
   };
 
   return (
-    <main className="min-h-screen pb-24 px-4 pt-6" style={{ background: "#060D1A" }}>
-      <div className="flex justify-between items-center mb-5">
+    <main className="min-h-screen bg-bg pb-24 px-4 pt-6">
+
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#EEF4FF]">Your Routes</h1>
-          {lastUpdated && <p className="text-xs text-[#7B9CC4]">Updated {lastUpdated}</p>}
+          <p className="font-mono text-[9px] tracking-[0.18em] mb-1" style={{ color: "#3A3530" }}>FINANCIAL GPS</p>
+          <h1 className="font-display font-bold text-2xl text-ink">Your Routes</h1>
+          {lastUpdated && (
+            <p className="font-mono text-[10px] mt-0.5" style={{ color: "#6B6560" }}>
+              Updated {lastUpdated}
+            </p>
+          )}
         </div>
         <button
           onClick={recalculate}
           disabled={recalculating}
-          className="px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
-          style={{ background: "#1A2F50", color: "#2563EB" }}
+          className="font-mono text-[10px] px-3 py-2 rounded-[2px] tracking-wider transition-all disabled:opacity-50"
+          style={{
+            background: "transparent",
+            border: "1px solid #242424",
+            color: recalculating ? "#FF6B2B" : "#6B6560",
+          }}
         >
-          {recalculating ? "Recalculating..." : "↻ Recalculate"}
+          {recalculating ? "RECALC…" : "↻ RECALC"}
         </button>
       </div>
 
@@ -68,8 +76,8 @@ export default function GPSPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl px-4 py-3 mb-4 text-sm"
-          style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)", color: "#7B9CC4" }}
+          className="p-3 mb-4 rounded-[3px] text-sm"
+          style={{ background: "rgba(255,107,43,0.06)", border: "1px solid rgba(255,107,43,0.2)", color: "#6B6560", borderLeft: "2px solid #FF6B2B" }}
         >
           {summary}
         </motion.div>
@@ -79,13 +87,28 @@ export default function GPSPage() {
         <>
           <GoalCardSkeleton />
           <GoalCardSkeleton />
+          <GoalCardSkeleton />
         </>
       ) : goals.length > 0 ? (
-        goals.map((g) => <GoalCard key={g.id} goal={g} />)
+        <div>
+          {goals.map((g, i) => (
+            <motion.div
+              key={g.id}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07 }}
+            >
+              <GoalCard goal={g} />
+            </motion.div>
+          ))}
+        </div>
       ) : (
         <div className="text-center py-16">
-          <p className="text-[#7B9CC4] mb-2">No goals yet.</p>
-          <p className="text-sm text-[#6B7280]">Add your first goal to start your GPS.</p>
+          <div className="flex justify-center mb-4 fox-float">
+            <Image src="/fox-chart.png" alt="Fort" width={96} height={96} className="object-contain" />
+          </div>
+          <p className="font-display font-bold text-base text-ink mb-2">No routes yet.</p>
+          <p className="text-sm" style={{ color: "#6B6560" }}>Tell Fort what you&apos;re working toward.</p>
         </div>
       )}
 
