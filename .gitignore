@@ -1,0 +1,40 @@
+# Root-level gitignore — covers both backend and web
+
+# Environment files — NEVER commit real secrets
+.env
+*.env
+!*.env.example
+
+# Python (backend)
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.db
+*.sqlite
+*.sqlite3
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+
+# Node (frontend)
+node_modules/
+.next/
+out/
+.vercel
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
