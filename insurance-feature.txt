@@ -1,0 +1,8 @@
+Insurance Integration
+What it does: 
+Insurance doesn't get its own screen. 
+It surfaces at moments where protection gaps become visible 
+inside the stress test, AI responses, Smart Alternatives, stage unlocks, and occasional Daily Builds.
+
+Key insight delivered by AI: Young adults overestimate life insurance costs by 10–12x. The AI debunks this in real conversation using the user's actual income. "For someone your age, a $250,000 term policy typically runs $15–$25/month."
+Priority: Low (surfaces through existing features — no separate screen)

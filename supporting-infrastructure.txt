@@ -1,0 +1,6 @@
+Supporting Infrastructure
+XP System: Every meaningful financial behavior earns XP. No XP for opening the app. XP drives stage progression and powers the social layer.
+Life-Stage Progression: Five stages from Income Initiate to Independent Operator. Each stage unlocks new features. Stage answers "Am I on track?" without comparing wealth.
+Risk Monitoring Engine: Tracks credit utilization, debt ratio, emergency fund, income volatility, and insurance gaps. Risk never appears as a raw dashboard — it surfaces inside AI responses, Tap Check, and GPS routing as context.
+Stress Test Onboarding: First two minutes show the user how their finances break under pressure. Creates urgency. Assigns starting stage. Identifies top risk. Sets first goal. Not a form — a confrontation.
+Priority: High
