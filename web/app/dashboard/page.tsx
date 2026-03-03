@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useGropalStore } from "@/store";
 import { api } from "@/services/api";
-import type { TapCheckResponse } from "@/types";
+import type { TapCheckResponse, Goal } from "@/types";
 import Navigation from "@/components/Navigation";
 import GoalCard from "@/components/GoalCard";
 import TapCheckModal from "@/components/TapCheckModal";
@@ -43,6 +43,9 @@ function AskFortVoiceCard() {
   const [transcript, setTranscript] = useState("");
   const [noVoice, setNoVoice] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const manualStopRef = useRef(false);
+  const hasResultRef = useRef(false);
+  const restartedRef = useRef(false);
 
   const startVoice = useCallback(() => {
     const SR =
@@ -59,30 +62,56 @@ function AskFortVoiceCard() {
     }
 
     const r = new SR();
-    r.continuous = false;
+    r.continuous = true;
     r.interimResults = true;
     r.lang = "en-US";
+
+    manualStopRef.current = false;
+    hasResultRef.current = false;
+    restartedRef.current = false;
 
     r.onresult = (e: SpeechRecognitionEvent) => {
       const t = Array.from(e.results)
         .map((res) => res[0].transcript)
         .join("");
+      hasResultRef.current = !!t.trim();
       setTranscript(t);
-      if (e.results[e.results.length - 1].isFinal) {
+      if (e.results[e.results.length - 1].isFinal && t.trim()) {
+        manualStopRef.current = true;
         setIsListening(false);
         router.push(`/ask?q=${encodeURIComponent(t)}`);
       }
     };
-    r.onerror = () => { setIsListening(false); setTranscript(""); };
-    r.onend   = () => setIsListening(false);
+    r.onerror = () => {
+      manualStopRef.current = true;
+      setIsListening(false);
+      setTranscript("");
+    };
+    r.onend = () => {
+      if (!manualStopRef.current && !hasResultRef.current && !restartedRef.current) {
+        restartedRef.current = true;
+        try {
+          r.start();
+          return;
+        } catch {
+          // ignore and fall through
+        }
+      }
+      setIsListening(false);
+    };
 
     recognitionRef.current = r;
-    r.start();
-    setIsListening(true);
-    setTranscript("");
+    try {
+      r.start();
+      setIsListening(true);
+      setTranscript("");
+    } catch {
+      setIsListening(false);
+    }
   }, [router]);
 
   const stopVoice = () => {
+    manualStopRef.current = true;
     recognitionRef.current?.stop();
     setIsListening(false);
   };
@@ -216,8 +245,13 @@ function AskFortVoiceCard() {
 }
 
 // ─── Empty goal state with Fort the Fox ───────────────────────────────────────
-// Empty goal state with Fort the Fox
-function EmptyGoalState({ onAddGoal }: { onAddGoal: () => void }) {
+function EmptyGoalState({
+  onCreateGoal,
+  onBrowse,
+}: {
+  onCreateGoal: (text: string) => void;
+  onBrowse: () => void;
+}) {
   const [goalInput, setGoalInput] = useState("");
 
   return (
@@ -251,14 +285,14 @@ function EmptyGoalState({ onAddGoal }: { onAddGoal: () => void }) {
       />
       <div className="flex gap-2">
         <button
-          onClick={() => goalInput.trim() && onAddGoal()}
+          onClick={() => goalInput.trim() && onCreateGoal(goalInput)}
           className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
           style={{ background: "#2563EB", color: "#fff" }}
         >
           Set this goal →
         </button>
         <button
-          onClick={onAddGoal}
+          onClick={onBrowse}
           className="py-3 px-4 rounded-xl text-sm font-medium"
           style={{ background: "#0C1829", border: "1px solid #1A2F50", color: "#7B9CC4" }}
         >
@@ -300,6 +334,29 @@ export default function DashboardPage() {
   }, [userId, setUser, setGoals]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleCreateInlineGoal = useCallback(
+    async (goalText: string) => {
+      const name = goalText.trim();
+      if (!name) return;
+
+      try {
+        const payload = {
+          name,
+          type: "save_for_something",
+          target_amount: 2000,
+          monthly_contribution: 150,
+          priority: (goals?.length ?? 0) + 1,
+        };
+        const newGoal = (await api.createGoal(userId, payload)) as Goal;
+        setGoals([...(goals ?? []), newGoal]);
+        router.push("/gps");
+      } catch {
+        showToast(0, "Couldn't create that goal right now.");
+      }
+    },
+    [goals, userId, setGoals, router]
+  );
 
   const showToast = (amount: number, message: string) => {
     setXpToast({ amount, message });
@@ -499,7 +556,10 @@ export default function DashboardPage() {
                 <GoalCard key={goal.id} goal={goal} />
               ))
             ) : (
-              <EmptyGoalState onAddGoal={() => router.push("/gps")} />
+              <EmptyGoalState
+                onCreateGoal={handleCreateInlineGoal}
+                onBrowse={() => router.push("/gps")}
+              />
             )}
           </motion.div>
 

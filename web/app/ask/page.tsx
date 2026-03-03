@@ -46,6 +46,9 @@ function AskPageContent() {
   const bottomRef      = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SRInstance | null>(null);
+  const manualStopRef  = useRef(false);
+  const hasResultRef   = useRef(false);
+  const restartedRef   = useRef(false);
   const searchParams = useSearchParams();
   const autoQ        = searchParams.get("q");
 
@@ -121,33 +124,60 @@ function AskPageContent() {
     }
 
     const r = new SR();
-    r.continuous = false;
+    // Keep the mic open longer and allow a single auto-restart
+    // if the browser ends the session before capturing any speech.
+    r.continuous = true;
     r.interimResults = true;
     r.lang = "en-US";
+
+    manualStopRef.current = false;
+    hasResultRef.current = false;
+    restartedRef.current = false;
 
     r.onresult = (e: SREvent) => {
       const t = Array.from({ length: e.results.length })
         .map((_, i) => e.results[i][0].transcript)
         .join("");
+      hasResultRef.current = !!t.trim();
       setLiveTranscript(t);
-      if (e.results[e.results.length - 1].isFinal) {
+      if (e.results[e.results.length - 1].isFinal && t.trim()) {
+        manualStopRef.current = true;
         setIsListening(false);
         send(t);
       }
     };
     r.onerror = () => {
+      manualStopRef.current = true;
       setIsListening(false);
       setLiveTranscript("");
     };
-    r.onend = () => setIsListening(false);
+    r.onend = () => {
+      // If the mic stopped on its own without hearing anything,
+      // auto-restart once so it doesn't flash off immediately.
+      if (!manualStopRef.current && !hasResultRef.current && !restartedRef.current) {
+        restartedRef.current = true;
+        try {
+          r.start();
+          return;
+        } catch {
+          // fall through and just stop listening
+        }
+      }
+      setIsListening(false);
+    };
 
     recognitionRef.current = r;
-    r.start();
-    setIsListening(true);
-    setLiveTranscript("");
+    try {
+      r.start();
+      setIsListening(true);
+      setLiveTranscript("");
+    } catch {
+      setIsListening(false);
+    }
   }, [send]);
 
   const stopListening = () => {
+    manualStopRef.current = true;
     recognitionRef.current?.stop();
     setIsListening(false);
   };

@@ -48,32 +48,54 @@ def onboard(req: OnboardingRequest, db: Session = Depends(get_db)):
     db.add(user)
 
     goals = []
-    for goal_type in req.goals_input[:2]:
-        goal_names = {
-            "move_out": "Move Out",
-            "pay_off_debt": "Pay Off Debt",
-            "emergency_fund": "Emergency Fund",
-            "save_for_something": "Savings Goal",
-            "start_investing": "Investment Fund",
-        }
-        target_amounts = {
-            "move_out": 4000,
-            "pay_off_debt": sum(d.balance for d in req.debts) if req.debts else 1500,
-            "emergency_fund": max(req.income_monthly * 3, 1000),
-            "save_for_something": 2000,
-            "start_investing": 1000,
-        }
+    # Map whatever the user typed into concrete goal types + names
+    # so free-text like "move out" or "pay off debt" still creates goals.
+    goal_names = {
+        "move_out": "Move Out",
+        "pay_off_debt": "Pay Off Debt",
+        "emergency_fund": "Emergency Fund",
+        "save_for_something": "Savings Goal",
+        "start_investing": "Investment Fund",
+    }
+    target_amounts = {
+        "move_out": 4000,
+        "pay_off_debt": sum(d.balance for d in req.debts) if req.debts else 1500,
+        "emergency_fund": max(req.income_monthly * 3, 1000),
+        "save_for_something": 2000,
+        "start_investing": 1000,
+    }
+
+    for raw in req.goals_input[:2]:
+        text = (raw or "").strip()
+        lower = text.lower()
+
+        if text in goal_names:
+            goal_type = text
+        elif "move out" in lower or "move-out" in lower or "apartment" in lower:
+            goal_type = "move_out"
+        elif "debt" in lower or "credit card" in lower or "card" in lower:
+            goal_type = "pay_off_debt"
+        elif "emergency" in lower or "rainy day" in lower or "safety net" in lower:
+            goal_type = "emergency_fund"
+        elif "invest" in lower or "roth" in lower or "401k" in lower:
+            goal_type = "start_investing"
+        else:
+            goal_type = "save_for_something"
+
+        display_name = goal_names.get(goal_type, text or "My Goal")
+        target_amount = target_amounts.get(goal_type, 2000)
+
         goal = Goal(
             id=f"goal_{uuid.uuid4().hex[:8]}",
             user_id=user_id,
-            name=goal_names.get(goal_type, "My Goal"),
+            name=display_name,
             type=goal_type,
-            target_amount=target_amounts.get(goal_type, 2000),
+            target_amount=target_amount,
             current_amount=0,
             monthly_contribution=max(round(profile["monthly_surplus"] * 0.4, 2), 0),
             status="on_track",
             days_behind=0,
-            priority=req.goals_input.index(goal_type) + 1,
+            priority=req.goals_input.index(raw) + 1 if raw in req.goals_input else 1,
         )
         goals.append(goal)
         db.add(goal)

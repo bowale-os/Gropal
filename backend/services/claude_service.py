@@ -49,7 +49,58 @@ FALLBACK_ALTERNATIVES = [
 ]
 
 
+def _demo_answer(user_profile: dict, message: str) -> str | None:
+    """
+    Hard-coded Q&A for demo so Ask Fort still works
+    even if the LLM API key is missing or failing.
+    """
+    text = (message or "").lower()
+    stage = user_profile.get("stage") or "Credit Builder"
+    top_risk = user_profile.get("top_risk") or "high credit utilization"
+    income = user_profile.get("income_monthly") or 3200
+
+    if "how am i doing" in text:
+        return (
+            f"Big picture: you're in the {stage} stage with about ${income:,.0f} coming in each month. "
+            f"Your top risk is {top_risk}, but you’ve already started moving money toward your goals — "
+            "stay consistent and you’ll see real progress over the next 3–6 months."
+        )
+
+    if "can i afford this" in text or "afford this" in text:
+        return (
+            "Rule of thumb: if this pushes your budget above ~30% of take-home on non-essentials, "
+            "it probably slows your main goals down. Try capping this purchase at one week of free cash "
+            "and sending the rest toward your top goal instead."
+        )
+
+    if "pay off debt" in text or "pay off my debt" in text or "credit card" in text:
+        return (
+            "Focus on your highest-interest card first. Keep making minimums on everything else, "
+            "then add any extra cash to that one card until it’s gone. Once it’s paid off, roll the "
+            "same payment into the next card so your momentum keeps compounding."
+        )
+
+    if "top risk" in text or "biggest risk" in text:
+        return (
+            f"Right now your biggest risk is {top_risk}. That’s what’s most likely to slow your goals "
+            "down if life throws a curveball, so we’ll keep surfacing habits and Tap Checks that chip away at it."
+        )
+
+    if "next stage" in text or "level up" in text or "xp" in text:
+        return (
+            "To hit your next stage, stack small wins: complete your daily builds, say yes to Tap Check pauses "
+            "when a purchase isn’t aligned, and keep at least one automatic contribution flowing into your top goal."
+        )
+
+    return None
+
+
 def ask(user_profile: dict, message: str, history: list) -> str:
+    # First, try demo Q&A so the product works offline / without an API key.
+    demo = _demo_answer(user_profile, message)
+    if demo is not None:
+        return demo
+
     try:
         model = _get_model()
         system_prompt = f"""You are Fort, FortiFi's AI financial advisor for young adults aged 18-25.
